@@ -249,10 +249,10 @@ static bool scan_bracket(Scanner *s, TSLexer *lexer, int32_t c) {
       // Cryptol reports mismatched brackets as a parse error; here the
       // parser will see an unexpected token.
       while (s->stack.size > 0 && *array_back(&s->stack) >= 0) {
-        array_pop(&s->stack);
+        (void)array_pop(&s->stack);
       }
       if (s->stack.size > 0) {
-        array_pop(&s->stack);
+        (void)array_pop(&s->stack);
       }
       return emit_char(lexer, closing_token(c));
     default:
@@ -367,7 +367,7 @@ static bool scan(Scanner *s, TSLexer *lexer, const bool *valid_symbols) {
                       c == ']' || c == '}' ||
                       (c == ',' && has_explicit_block(s));
     if (ends_block) {
-      array_pop(&s->stack);
+      (void)array_pop(&s->stack);
       if (newline && !eof) {
         s->pending_column = column;
         s->pending_raw_column = raw_column(lexer);

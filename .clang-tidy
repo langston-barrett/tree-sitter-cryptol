@@ -8,6 +8,7 @@ Checks: >
   portability-*,
   readability-*,
   -bugprone-easily-swappable-parameters,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -misc-include-cleaner,
   -readability-function-cognitive-complexity,
   -readability-identifier-length,
