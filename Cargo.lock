@@ -189,7 +189,7 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter-cryptol"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "cc",
  "tree-sitter",

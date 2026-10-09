@@ -16,8 +16,8 @@ fn main() {
     }
 
     // The main grammar, and the grammars for Cryptol expressions and types
-    // (see expression/ and type/), which share the main grammar's scanner.
-    for dir in ["src", "expression/src", "type/src"] {
+    // (see expr/ and type/), which share the main grammar's scanner.
+    for dir in ["src", "expr/src", "type/src"] {
         for file in ["parser.c", "scanner.c"] {
             let path = std::path::Path::new(dir).join(file);
             c_config.file(&path);

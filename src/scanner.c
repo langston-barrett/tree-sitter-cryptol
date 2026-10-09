@@ -37,7 +37,7 @@
 #include <string.h>
 #include <wctype.h>
 
-// The grammars for Cryptol expressions and types (in expression/ and type/)
+// The grammars for Cryptol expressions and types (in expr/ and type/)
 // share this scanner; they define SCANNER_NAME before including this file.
 #ifndef SCANNER_NAME
 #define SCANNER_NAME(suffix) tree_sitter_cryptol_external_scanner_##suffix
@@ -81,7 +81,7 @@ enum TokenType {
   AT,
   TILDE,
   OPERATOR,
-  // Never produced (see expression/grammar.js and type/grammar.js).
+  // Never produced (see expr/grammar.js and type/grammar.js).
   UNREACHABLE,
 };
 

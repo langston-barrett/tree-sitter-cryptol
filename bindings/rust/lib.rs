@@ -22,7 +22,7 @@ use tree_sitter_language::LanguageFn;
 
 unsafe extern "C" {
     fn tree_sitter_cryptol() -> *const ();
-    fn tree_sitter_cryptol_expression() -> *const ();
+    fn tree_sitter_cryptol_expr() -> *const ();
     fn tree_sitter_cryptol_type() -> *const ();
 }
 
@@ -31,8 +31,8 @@ pub const LANGUAGE: LanguageFn = unsafe { LanguageFn::from_raw(tree_sitter_crypt
 
 /// The tree-sitter [`LanguageFn`] for a single Cryptol expression, e.g., as
 /// embedded in SAWScript's `{{ ... }}` blocks.
-pub const LANGUAGE_EXPRESSION: LanguageFn =
-    unsafe { LanguageFn::from_raw(tree_sitter_cryptol_expression) };
+pub const LANGUAGE_EXPR: LanguageFn =
+    unsafe { LanguageFn::from_raw(tree_sitter_cryptol_expr) };
 
 /// The tree-sitter [`LanguageFn`] for a single Cryptol type (schema), e.g., as
 /// embedded in SAWScript's `{| ... |}` blocks.
@@ -43,8 +43,8 @@ pub const LANGUAGE_TYPE: LanguageFn = unsafe { LanguageFn::from_raw(tree_sitter_
 /// [`node-types.json`]: https://tree-sitter.github.io/tree-sitter/using-parsers/6-static-node-types
 pub const NODE_TYPES: &str = include_str!("../../src/node-types.json");
 
-/// The content of the `node-types.json` file for [`LANGUAGE_EXPRESSION`].
-pub const NODE_TYPES_EXPRESSION: &str = include_str!("../../expression/src/node-types.json");
+/// The content of the `node-types.json` file for [`LANGUAGE_EXPR`].
+pub const NODE_TYPES_EXPR: &str = include_str!("../../expr/src/node-types.json");
 
 /// The content of the `node-types.json` file for [`LANGUAGE_TYPE`].
 pub const NODE_TYPES_TYPE: &str = include_str!("../../type/src/node-types.json");
@@ -79,7 +79,7 @@ mod tests {
     fn test_can_parse_expressions_and_types() {
         let mut parser = tree_sitter::Parser::new();
         for (language, text) in [
-            (super::LANGUAGE_EXPRESSION, "\\x -> x + 1"),
+            (super::LANGUAGE_EXPR, "\\x -> x + 1"),
             (super::LANGUAGE_TYPE, "{n} (fin n) => [n] -> Bit"),
         ] {
             parser.set_language(&language.into()).unwrap();

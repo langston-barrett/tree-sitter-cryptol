@@ -14,13 +14,13 @@
       "path": "."
     },
     {
-      "name": "cryptol_expression",
-      "camelcase": "CryptolExpression",
+      "name": "cryptol_expr",
+      "camelcase": "CryptolExpr",
       "title": "Cryptol expression",
-      "scope": "source.cryptol.expression",
-      "path": "expression",
+      "scope": "source.cryptol.expr",
+      "path": "expr",
       "file-types": [],
-      "injection-regex": "^cryptol_expression$",
+      "injection-regex": "^cryptol_expr$",
       "highlights": "queries/highlights.scm"
     },
     {
@@ -35,7 +35,7 @@
     }
   ],
   "metadata": {
-    "version": "0.1.0",
+    "version": "0.1.1",
     "license": "MIT",
     "description": "Cryptol grammar for tree-sitter",
     "authors": [

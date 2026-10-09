@@ -14,7 +14,7 @@
 import cryptol from '../grammar.js';
 
 export default grammar(cryptol, {
-  name: 'cryptol_expression',
+  name: 'cryptol_expr',
 
   rules: {
     source_file: $ => choice(

@@ -9,13 +9,13 @@ license = "MIT"
 name = "tree-sitter-cryptol"
 readme = "README.md"
 repository = "https://github.com/langston-barrett/tree-sitter-cryptol"
-version = "0.1.0"
+version = "0.1.1"
 
 build = "bindings/rust/build.rs"
 include = [
   "bindings/rust/*",
-  "expression/grammar.js",
-  "expression/src/*",
+  "expr/grammar.js",
+  "expr/src/*",
   "grammar.js",
   "queries/*",
   "src/*",

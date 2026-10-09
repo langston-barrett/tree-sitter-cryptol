@@ -1,6 +1,6 @@
 LANGUAGE_NAME := tree-sitter-cryptol
 HOMEPAGE_URL := https://github.com/langston-barrett/tree-sitter-cryptol
-VERSION := 0.1.0
+VERSION := 0.1.1
 DESCRIPTION := Cryptol grammar for tree-sitter
 
 # repository

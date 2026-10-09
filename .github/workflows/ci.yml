@@ -35,7 +35,7 @@ jobs:
         script/generate
         git diff --exit-code
     - run: npx tree-sitter test
-    - run: npx tree-sitter test -p expression
+    - run: npx tree-sitter test -p expr
     - run: npx tree-sitter test -p type
     - run: npm test
     - run: cargo test
@@ -51,7 +51,7 @@ jobs:
       run: |
         for cc in gcc clang; do
           "${cc}" --version | head -n 1
-          for scanner in src/scanner.c expression/src/scanner.c type/src/scanner.c; do
+          for scanner in src/scanner.c expr/src/scanner.c type/src/scanner.c; do
             "${cc}" -std=c11 -Isrc -c "${scanner}" -o /dev/null \
               -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
           done

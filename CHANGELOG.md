@@ -1,11 +1,11 @@
 # Changelog
 
-## Unreleased
+## [0.1.1] - 2026-10-08
 
-- Add grammars for a single Cryptol expression (`cryptol_expression`, in
-  `expression/`) and a single Cryptol type (`cryptol_type`, in `type/`), for
+- Add grammars for a single Cryptol expression (`cryptol_expr`, in
+  `expr/`) and a single Cryptol type (`cryptol_type`, in `type/`), for
   embedding Cryptol in other languages (e.g., SAWScript's `{{ ... }}` and
-  `{| ... |}` blocks). The Rust crate exports them as `LANGUAGE_EXPRESSION`
+  `{| ... |}` blocks). The Rust crate exports them as `LANGUAGE_EXPR`
   and `LANGUAGE_TYPE`.
 - Lex symbols made of operator characters (e.g., `=`, `->`, `|`, `..`) like
   Cryptol does, so that they are never parsed as operators.
