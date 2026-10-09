@@ -81,6 +81,8 @@ enum TokenType {
   AT,
   TILDE,
   OPERATOR,
+  // Never produced (see expression/grammar.js and type/grammar.js).
+  UNREACHABLE,
 };
 
 // Stack entries: non-negative values are the column of an implicit block;

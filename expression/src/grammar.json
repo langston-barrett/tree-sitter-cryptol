@@ -5,8 +5,26 @@
   "word": "identifier",
   "rules": {
     "source_file": {
-      "type": "SYMBOL",
-      "name": "_expr"
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_expr"
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_unreachable"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_module_body"
+            }
+          ]
+        }
+      ]
     },
     "module": {
       "type": "SEQ",
@@ -4855,6 +4873,44 @@
     "wildcard": {
       "type": "STRING",
       "value": "_"
+    },
+    "_module_body": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "module"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "interface_module"
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_module_start"
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_top_declarations"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_layout_end"
+            }
+          ]
+        }
+      ]
     }
   },
   "extras": [
@@ -5013,6 +5069,10 @@
     {
       "type": "SYMBOL",
       "name": "operator"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_unreachable"
     }
   ],
   "inline": [],

@@ -49,6 +49,8 @@ export default grammar({
     '\\', '->', '<-', '=>', '=', ':', '..', '...', '..<', '..>', '|', '<|',
     '|>', '<', '>', '+', '-', '*', '^^', '#', '@', '~',
     $.operator,
+    // Never produced (see expression/grammar.js and type/grammar.js).
+    $._unreachable,
   ],
 
   extras: $ => [/\s/, $.comment],

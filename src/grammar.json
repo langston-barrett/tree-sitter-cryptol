@@ -5046,6 +5046,10 @@
     {
       "type": "SYMBOL",
       "name": "operator"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_unreachable"
     }
   ],
   "inline": [],

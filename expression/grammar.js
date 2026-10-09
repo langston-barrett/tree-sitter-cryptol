@@ -17,6 +17,18 @@ export default grammar(cryptol, {
   name: 'cryptol_expression',
 
   rules: {
-    source_file: $ => $._expr,
+    source_file: $ => choice(
+      $._expr,
+      // Never matches, because the scanner never produces `_unreachable`, but
+      // makes every rule of the main grammar reachable, so that queries for
+      // the main grammar (e.g., queries/highlights.scm) work here too.
+      seq($._unreachable, $._module_body),
+    ),
+
+    _module_body: $ => choice(
+      $.module,
+      $.interface_module,
+      seq($._module_start, optional($._top_declarations), $._layout_end),
+    ),
   },
 });
