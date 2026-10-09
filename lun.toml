@@ -65,6 +65,7 @@ files = [
   "**/script/differential",
   "**/script/fetch-corpus",
   "**/script/list-corpus",
+  "**/script/generate",
 ]
 
 # -------------------------------------

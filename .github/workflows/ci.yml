@@ -30,11 +30,13 @@ jobs:
         node-version: 22
         cache: npm
     - run: npm ci
-    - name: Check that the generated parser is up to date
+    - name: Check that the generated parsers are up to date
       run: |
-        npx tree-sitter generate
+        script/generate
         git diff --exit-code
     - run: npx tree-sitter test
+    - run: npx tree-sitter test -p expression
+    - run: npx tree-sitter test -p type
     - run: npm test
     - run: cargo test
 
@@ -49,6 +51,8 @@ jobs:
       run: |
         for cc in gcc clang; do
           "${cc}" --version | head -n 1
-          "${cc}" -std=c11 -Isrc -c src/scanner.c -o /dev/null \
-            -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+          for scanner in src/scanner.c expression/src/scanner.c type/src/scanner.c; do
+            "${cc}" -std=c11 -Isrc -c "${scanner}" -o /dev/null \
+              -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+          done
         done

@@ -55,5 +55,5 @@ jobs:
       with:
         node-version: 22
         cache: npm
-    - run: npm ci --ignore-scripts && npm rebuild tree-sitter-cli
+    - run: npm ci
     - run: script/differential

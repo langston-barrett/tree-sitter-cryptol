@@ -10,7 +10,28 @@
         "cry"
       ],
       "highlights": "queries/highlights.scm",
-      "injection-regex": "^cryptol$"
+      "injection-regex": "^cryptol$",
+      "path": "."
+    },
+    {
+      "name": "cryptol_expression",
+      "camelcase": "CryptolExpression",
+      "title": "Cryptol expression",
+      "scope": "source.cryptol.expression",
+      "path": "expression",
+      "file-types": [],
+      "injection-regex": "^cryptol_expression$",
+      "highlights": "queries/highlights.scm"
+    },
+    {
+      "name": "cryptol_type",
+      "camelcase": "CryptolType",
+      "title": "Cryptol type",
+      "scope": "source.cryptol.type",
+      "path": "type",
+      "file-types": [],
+      "injection-regex": "^cryptol_type$",
+      "highlights": "queries/highlights.scm"
     }
   ],
   "metadata": {

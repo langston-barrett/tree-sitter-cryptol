@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Generate the parsers for all three grammars: Cryptol modules (grammar.js),
+# expressions (expression/grammar.js), and types (type/grammar.js).
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+TREE_SITTER=${TREE_SITTER:-npx tree-sitter}
+$TREE_SITTER generate
+$TREE_SITTER generate expression/grammar.js -o expression/src
+$TREE_SITTER generate type/grammar.js -o type/src

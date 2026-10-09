@@ -20,6 +20,12 @@
  * or not the parser expects them.  To track explicit blocks, the scanner
  * also lexes the bracket tokens.  Comments are lexed here too, because they
  * nest and because they must not affect layout.
+ *
+ * Finally, this scanner lexes symbols made of operator characters (e.g., `=`,
+ * `->`, `|`, `..`) and other operators.  Like Cryptol's lexer, it reads the
+ * longest sequence of operator characters and then classifies it, so that,
+ * e.g., `=` is never an operator, even where the parser does not expect `=`.
+ * (Tree-sitter's lexer only considers tokens that the parser expects.)
  */
 
 #include "tree_sitter/alloc.h"
@@ -30,6 +36,12 @@
 #include <stdint.h>
 #include <string.h>
 #include <wctype.h>
+
+// The grammars for Cryptol expressions and types (in expression/ and type/)
+// share this scanner; they define SCANNER_NAME before including this file.
+#ifndef SCANNER_NAME
+#define SCANNER_NAME(suffix) tree_sitter_cryptol_external_scanner_##suffix
+#endif
 
 enum TokenType {
   LAYOUT_START,
@@ -45,6 +57,30 @@ enum TokenType {
   COMMENT,
   ERROR_SENTINEL,
   INVALID_INDENTATION,
+  // Symbols made of operator characters, and other operators.
+  LAMBDA,
+  ARROW_R,
+  ARROW_L,
+  FAT_ARROW,
+  EQUALS,
+  COLON,
+  DOT_DOT,
+  DOT_DOT_DOT,
+  DOT_DOT_LT,
+  DOT_DOT_GT,
+  BAR,
+  TRI_L,
+  TRI_R,
+  LT,
+  GT,
+  PLUS,
+  MINUS,
+  STAR,
+  EXP,
+  HASH,
+  AT,
+  TILDE,
+  OPERATOR,
 };
 
 // Stack entries: non-negative values are the column of an implicit block;
@@ -99,36 +135,56 @@ static bool has_explicit_block(const Scanner *s) {
   return false;
 }
 
-static void consume_stars(TSLexer *lexer) {
-  while (lexer->lookahead == '*') {
-    advance(lexer);
+// A position in a line, for tracking where comments end.  The column uses
+// Cryptol's 8-column tab stops, and is meaningful only after a newline.
+typedef struct {
+  int32_t column;
+  bool newline;
+} LinePosition;
+
+static void advance_tracking(TSLexer *lexer, LinePosition *position) {
+  if (position != NULL) {
+    if (lexer->lookahead == '\n') {
+      position->newline = true;
+      position->column = 0;
+    } else if (lexer->lookahead == '\t') {
+      position->column = (position->column / 8 + 1) * 8;
+    } else {
+      position->column++;
+    }
   }
+  advance(lexer);
 }
 
 // Advance past the body of a block comment, after its opening `/*...`.
 // This follows Cryptol's lexer: comments nest, and `/*/`, `/**/`, etc. are
-// complete comments (even inside another comment).
-static void finish_block_comment(TSLexer *lexer) {
+// complete comments (even inside another comment).  If `position` is not
+// NULL, it is updated to the end of the comment.
+static void finish_block_comment(TSLexer *lexer, LinePosition *position) {
   unsigned depth = 1;
   while (depth > 0 && !lexer->eof(lexer)) {
     if (lexer->lookahead == '/') {
-      advance(lexer);
+      advance_tracking(lexer, position);
       if (lexer->lookahead == '*') {
-        consume_stars(lexer);
+        while (lexer->lookahead == '*') {
+          advance_tracking(lexer, position);
+        }
         if (lexer->lookahead == '/') {
-          advance(lexer);
+          advance_tracking(lexer, position);
         } else {
           depth++;
         }
       }
     } else if (lexer->lookahead == '*') {
-      consume_stars(lexer);
+      while (lexer->lookahead == '*') {
+        advance_tracking(lexer, position);
+      }
       if (lexer->lookahead == '/') {
-        advance(lexer);
+        advance_tracking(lexer, position);
         depth--;
       }
     } else {
-      advance(lexer);
+      advance_tracking(lexer, position);
     }
   }
 }
@@ -172,7 +228,7 @@ static void skip_trivia(TSLexer *lexer) {
         bool complete = false;
         open_block_comment(lexer, &complete);
         if (!complete) {
-          finish_block_comment(lexer);
+          finish_block_comment(lexer, NULL);
         }
       } else {
         return;
@@ -205,6 +261,73 @@ static bool starts_with_module_header(TSLexer *lexer) {
   }
   skip_trivia(lexer);
   return scan_keyword(lexer, "module");
+}
+
+// ASCII operator characters (Lexer.x: @op).  Cryptol also classifies
+// non-ASCII symbols and punctuation as operator characters; operators that
+// start with those are lexed by the grammar's `operator` rule instead.
+static bool is_op_char(int32_t c) {
+  return c != 0 && c < 0x80 && strchr("!#$%&*+-./:<=>?@\\^|~", (int)c);
+}
+
+// Longer runs of operator characters are not compared with the symbols.
+#define MAX_SYMBOL_LENGTH 8
+
+typedef struct {
+  const char *text;
+  enum TokenType token;
+} Symbol;
+
+static const Symbol SYMBOLS[] = {
+    {"\\", LAMBDA},      {"->", ARROW_R},
+    {"<-", ARROW_L},     {"=>", FAT_ARROW},
+    {"=", EQUALS},       {":", COLON},
+    {"..", DOT_DOT},     {"...", DOT_DOT_DOT},
+    {"..<", DOT_DOT_LT}, {"..>", DOT_DOT_GT},
+    {"|", BAR},          {"<|", TRI_L},
+    {"|>", TRI_R},       {"<", LT},
+    {">", GT},           {"+", PLUS},
+    {"-", MINUS},        {"*", STAR},
+    {"^^", EXP},         {"#", HASH},
+    {"@", AT},           {"~", TILDE},
+};
+
+static enum TokenType classify_operator(const char *text) {
+  for (size_t i = 0; i < sizeof(SYMBOLS) / sizeof(SYMBOLS[0]); i++) {
+    if (strcmp(text, SYMBOLS[i].text) == 0) {
+      return SYMBOLS[i].token;
+    }
+  }
+  return OPERATOR;
+}
+
+// Cryptol's layout compares the column of every token with that of the
+// current implicit block, but the scanner otherwise does so only for tokens
+// that start a line.  Other tokens can be at or left of the block's column
+// only if they follow a comment that starts a line or spans lines, e.g.:
+//
+//     x = 1 /*
+//     */y = 2
+//
+// So after such a comment, if the next token is on the same line and at or
+// left of the block's column, record its position as starting a line.  The
+// next scan then produces a layout token there, which also clears this
+// state, so it cannot apply to a later token.
+static void note_token_after_comment(Scanner *s, TSLexer *lexer,
+                                     LinePosition *end, int32_t top) {
+  if (!end->newline || top < 0) {
+    return;
+  }
+  while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+    advance_tracking(lexer, end);
+  }
+  int32_t c = lexer->lookahead;
+  if (lexer->eof(lexer) || iswspace((wint_t)c) || c == '/' ||
+      end->column > top) {
+    return;
+  }
+  s->pending_column = end->column;
+  s->pending_raw_column = raw_column(lexer);
 }
 
 static bool emit(TSLexer *lexer, enum TokenType token) {
@@ -296,40 +419,122 @@ static bool scan(Scanner *s, TSLexer *lexer, const bool *valid_symbols) {
   int32_t c = lexer->lookahead;
   int32_t top = s->stack.size > 0 ? *array_back(&s->stack) : EXPLICIT_PAREN;
 
-  // Comments do not participate in layout, so they are lexed before making
-  // any layout decision.  In particular, a block started just before a
-  // comment begins at the first token after the comment.
-  //
-  // The exception is documentation comments, which Cryptol's layout treats
-  // as tokens: one at the column of the current block gets a separator
-  // before it.  (Cryptol then omits the separator before the next token, but
-  // the grammar allows repeated separators instead.)
-  if (c == '/') {
-    advance(lexer);
-    if (lexer->lookahead == '/') {
+  // `get_column` at the start of the token, when needed for layout.  This
+  // must be computed before reading an operator below, after which the lexer
+  // is no longer at the start of the token.  (`get_column` takes time
+  // proportional to the column, so it is not computed for every token.)
+  int32_t start_raw_column = NO_COLUMN;
+
+  // Read a sequence of operator characters, which may be a comment, a
+  // symbol, an operator, or (just `.`) the start of a selector.
+  enum TokenType op_token = OPERATOR;
+  bool have_op = false;
+  bool selector = false;
+  if (!eof && is_op_char(c)) {
+    if (newline || starting_block) {
+      start_raw_column = raw_column(lexer);
+    }
+    char text[MAX_SYMBOL_LENGTH + 1];
+    size_t length = 0;
+    // Whether the whole sequence is a comment opener: `/*`, `/**`, etc., or
+    // a complete comment `/*/`, `/**/`, etc.  Following Cryptol's lexer, a
+    // longer sequence starting with `/*` is an operator.
+    enum {
+      OPEN_SLASH,
+      OPEN_STAR,
+      OPEN_STARS,
+      OPEN_CLOSED,
+      NOT_OPENER
+    } opener = OPEN_SLASH;
+    while (is_op_char(lexer->lookahead)) {
+      int32_t next = lexer->lookahead;
+      if (length < MAX_SYMBOL_LENGTH) {
+        text[length] = (char)next;
+      }
+      switch (opener) {
+        case OPEN_SLASH:
+          opener = next == '/' ? OPEN_STAR : NOT_OPENER;
+          break;
+        case OPEN_STAR:
+          opener = next == '*' ? OPEN_STARS : NOT_OPENER;
+          break;
+        case OPEN_STARS:
+          if (next == '/') {
+            opener = OPEN_CLOSED;
+          } else if (next != '*') {
+            opener = NOT_OPENER;
+          }
+          break;
+        default:
+          opener = NOT_OPENER;
+          break;
+      }
+      length++;
+      advance(lexer);
+    }
+    size_t stored = length < MAX_SYMBOL_LENGTH ? length : MAX_SYMBOL_LENGTH;
+    text[stored] = '\0';
+
+    // Comments do not participate in layout, so they are produced before
+    // making any layout decision.  In particular, a block started just before
+    // a comment begins at the first token after the comment.
+    //
+    // The exception is documentation comments, which Cryptol's layout treats
+    // as tokens: one at the column of the current block gets a separator
+    // before it.  (Cryptol then omits the separator before the next token,
+    // but the grammar allows repeated separators instead.)
+    if (length >= 2 && text[0] == '/' && text[1] == '/') {
       finish_line_comment(lexer);
       lexer->mark_end(lexer);
       return emit(lexer, COMMENT);
     }
-    if (lexer->lookahead == '*') {
-      bool complete = false;
-      bool doc = open_block_comment(lexer, &complete);
+    if (opener == OPEN_STARS || opener == OPEN_CLOSED) {
+      bool complete = opener == OPEN_CLOSED;
+      bool doc = !complete && length == 3;
       if (doc && !recovering && !starting_block && newline && top >= 0 &&
           column == top) {
         return emit(lexer, LAYOUT_SEMICOLON);
       }
+      LinePosition end = {.column = column + (int32_t)length,
+                          .newline = newline};
       if (!complete) {
-        finish_block_comment(lexer);
+        finish_block_comment(lexer, &end);
       }
       lexer->mark_end(lexer);
+      if (!recovering) {
+        note_token_after_comment(s, lexer, &end, top);
+      }
       return emit(lexer, COMMENT);
     }
-    // An operator starting with `/`.  We can no longer inspect the
-    // character after it, but none of the decisions below need to.
-    c = '/';
+
+    if (length == 1 && text[0] == '.' && is_ident_char(lexer->lookahead)) {
+      selector = true;
+    } else {
+      have_op = true;
+      op_token =
+          length <= MAX_SYMBOL_LENGTH ? classify_operator(text) : OPERATOR;
+    }
+  }
+
+  // Produce the operator (or let the grammar lex the selector).
+#define FINISH_OPERATOR()                                                      \
+  do {                                                                         \
+    if (selector) {                                                            \
+      return false;                                                            \
+    }                                                                          \
+    if (have_op) {                                                             \
+      lexer->mark_end(lexer);                                                  \
+      return emit(lexer, op_token);                                            \
+    }                                                                          \
+  } while (0)
+
+  if (start_raw_column == NO_COLUMN && !have_op && !selector &&
+      (starting_block || newline)) {
+    start_raw_column = raw_column(lexer);
   }
 
   if (recovering) {
+    FINISH_OPERATOR();
     return !eof && scan_bracket(s, lexer, c);
   }
 
@@ -339,9 +544,9 @@ static bool scan(Scanner *s, TSLexer *lexer, const bool *valid_symbols) {
       return emit(lexer, MODULE_START);
     }
     if (!newline) {
-      column = raw_column(lexer);
+      column = start_raw_column;
     }
-    if (starts_with_module_header(lexer)) {
+    if (!have_op && !selector && starts_with_module_header(lexer)) {
       return false;
     }
     array_push(&s->stack, column);
@@ -352,7 +557,7 @@ static bool scan(Scanner *s, TSLexer *lexer, const bool *valid_symbols) {
     if (eof) {
       column = 0;
     } else if (!newline) {
-      column = raw_column(lexer);
+      column = start_raw_column;
     }
     array_push(&s->stack, column);
     return emit(lexer, LAYOUT_START);
@@ -370,7 +575,9 @@ static bool scan(Scanner *s, TSLexer *lexer, const bool *valid_symbols) {
       (void)array_pop(&s->stack);
       if (newline && !eof) {
         s->pending_column = column;
-        s->pending_raw_column = raw_column(lexer);
+        s->pending_raw_column = start_raw_column != NO_COLUMN
+                                    ? start_raw_column
+                                    : raw_column(lexer);
       }
       return emit(lexer, LAYOUT_END);
     }
@@ -384,10 +591,12 @@ static bool scan(Scanner *s, TSLexer *lexer, const bool *valid_symbols) {
     return emit(lexer, INVALID_INDENTATION);
   }
 
+  FINISH_OPERATOR();
+#undef FINISH_OPERATOR
   return !eof && scan_bracket(s, lexer, c);
 }
 
-void *tree_sitter_cryptol_external_scanner_create(void) {
+void *SCANNER_NAME(create)(void) {
   Scanner *s = ts_calloc(1, sizeof(Scanner));
   array_init(&s->stack);
   s->pending_column = NO_COLUMN;
@@ -395,7 +604,7 @@ void *tree_sitter_cryptol_external_scanner_create(void) {
   return s;
 }
 
-void tree_sitter_cryptol_external_scanner_destroy(void *payload) {
+void SCANNER_NAME(destroy)(void *payload) {
   Scanner *s = payload;
   array_delete(&s->stack);
   ts_free(s);
@@ -403,8 +612,7 @@ void tree_sitter_cryptol_external_scanner_destroy(void *payload) {
 
 #define HEADER_SIZE (2 * sizeof(int32_t))
 
-unsigned tree_sitter_cryptol_external_scanner_serialize(void *payload,
-                                                        char *buffer) {
+unsigned SCANNER_NAME(serialize)(void *payload, char *buffer) {
   Scanner *s = payload;
   memcpy(buffer, &s->pending_column, sizeof(int32_t));
   memcpy(buffer + sizeof(int32_t), &s->pending_raw_column, sizeof(int32_t));
@@ -420,9 +628,8 @@ unsigned tree_sitter_cryptol_external_scanner_serialize(void *payload,
   return (unsigned)(HEADER_SIZE + bytes);
 }
 
-void tree_sitter_cryptol_external_scanner_deserialize(void *payload,
-                                                      const char *buffer,
-                                                      unsigned length) {
+void SCANNER_NAME(deserialize)(void *payload, const char *buffer,
+                               unsigned length) {
   Scanner *s = payload;
   array_clear(&s->stack);
   s->pending_column = NO_COLUMN;
@@ -440,7 +647,7 @@ void tree_sitter_cryptol_external_scanner_deserialize(void *payload,
   }
 }
 
-bool tree_sitter_cryptol_external_scanner_scan(void *payload, TSLexer *lexer,
-                                               const bool *valid_symbols) {
+bool SCANNER_NAME(scan)(void *payload, TSLexer *lexer,
+                        const bool *valid_symbols) {
   return scan(payload, lexer, valid_symbols);
 }

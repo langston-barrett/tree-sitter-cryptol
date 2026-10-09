@@ -14,9 +14,13 @@ version = "0.1.0"
 build = "bindings/rust/build.rs"
 include = [
   "bindings/rust/*",
+  "expression/grammar.js",
+  "expression/src/*",
   "grammar.js",
   "queries/*",
   "src/*",
+  "type/grammar.js",
+  "type/src/*",
   "tree-sitter.json",
   "/LICENSE",
 ]

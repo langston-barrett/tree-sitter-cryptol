@@ -20,7 +20,8 @@ const commaSep1 = (rule) => sep1(rule, ',');
 const ID_FIRST = /[\p{L}_]/u;
 const ID_NEXT = /[\p{L}\p{N}_']/u;
 // Cryptol's lexer classifies non-ASCII symbols and punctuation as operator
-// characters.
+// characters.  The external scanner lexes operators that start with an ASCII
+// character; the `operator` rule lexes the rest.
 const OP_CHAR = choice(
   /[!#$%&*+\-./:<=>?@\\^|~]/,
   // No `u` flag: JavaScript does not support `&&`, but tree-sitter does.
@@ -43,6 +44,11 @@ export default grammar({
     // Never valid; produced for tokens that Cryptol rejects because of their
     // indentation.
     $._invalid_indentation,
+    // Symbols made of operator characters, and other operators, which are
+    // lexed together as in Cryptol's lexer (see src/scanner.c).
+    '\\', '->', '<-', '=>', '=', ':', '..', '...', '..<', '..>', '|', '<|',
+    '|>', '<', '>', '+', '-', '*', '^^', '#', '@', '~',
+    $.operator,
   ],
 
   extras: $ => [/\s/, $.comment],
