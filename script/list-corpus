@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# List the .cry files in the corpus, relative to the corpus directory,
+# excluding test-vector files: large files in test directories that consist
+# mostly of literals.  These add little coverage but most of the bytes.
+set -euo pipefail
+
+root=$(cd "$(dirname "$0")/.." && pwd)
+cd "${1:-$root/corpus}"
+
+find . -name '*.cry' \( -type f -o -type l \) | LC_ALL=C sort | perl -ne '
+  chomp; my $f = $_;
+  my $size = -s $f;
+  if ($size > 8192 && lc($f) =~ /test|vector|cavp|suiteb|kat|mct/) {
+    open(my $h, "<", $f) or die "$f: $!";
+    local $/; my $text = <$h>; close $h;
+    my $lits = 0;
+    $lits += length($&) while $text =~ /0x[0-9a-fA-F_]+|\b[0-9]+\b|"[^"\n]*"/g;
+    next if $lits / $size >= 0.4;
+  }
+  print "$f\n";
+'

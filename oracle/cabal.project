@@ -1,0 +1,10 @@
+packages: .
+
+-- Pinned Cryptol commit whose parser is the reference for the
+-- differential test.  Keep in sync with CRYPTOL_REV in script/oracle.sh.
+source-repository-package
+  type: git
+  location: https://github.com/GaloisInc/cryptol
+  tag: 51405420cb90cf9959ca4349eea0ae8b77487855
+
+with-compiler: ghc-9.10.3

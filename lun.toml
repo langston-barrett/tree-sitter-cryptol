@@ -1,0 +1,93 @@
+# https://langston-barrett.github.io/lun/
+
+mtime = true
+
+# -------------------------------------
+# c (the hand-written external scanner; the rest of src/ is generated)
+
+[[formatter]]
+name = "clang-format"
+cmd = "clang-format -i --"
+files = ["**/src/scanner.c"]
+configs = [".clang-format"]
+check = "clang-format --dry-run -Werror --"
+
+[[linter]]
+name = "clang-tidy"
+cmd = "script/clang-tidy"
+files = ["**/src/scanner.c"]
+configs = [".clang-tidy", "compile_flags.txt"]
+
+[[linter]]
+name = "cc"
+cmd = "cc -std=c11 -Isrc -fsyntax-only -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror"
+files = ["**/src/scanner.c"]
+
+# -------------------------------------
+# gha
+
+[[linter]]
+name = "zizmor"
+cmd = "zizmor --"
+files = ["**/.github/**/*.yml"]
+ignore = ["**/.github/dependabot.yml"] # zizmor#1341
+
+# -------------------------------------
+# json
+
+[[linter]]
+name = "jq"
+cmd = "jq null --"
+files = ["*.json"]
+
+# -------------------------------------
+# md
+
+[[linter]]
+name = "mdlynx"
+cmd = "mdlynx --"
+files = ["*.md"]
+
+[[linter]]
+name = "typos"
+cmd = "typos --"
+files = ["*.md"]
+fix = "typos --color=always --write-changes --"
+
+# -------------------------------------
+# sh
+
+[[linter]]
+name = "shellcheck"
+cmd = "shellcheck --color=always --shell=bash --"
+files = [
+  "**/script/clang-tidy",
+  "**/script/differential",
+  "**/script/fetch-corpus",
+  "**/script/list-corpus",
+]
+
+# -------------------------------------
+# toml
+
+[[formatter]]
+name = "taplo"
+cmd = "taplo format --"
+files = ["*.toml"]
+check = "taplo format --check --"
+
+# -------------------------------------
+# txt
+
+[[linter]]
+name = "ttlint"
+cmd = "ttlint --"
+files = ["*"]
+ignore = [
+  "**/src/grammar.json",
+  "**/src/node-types.json",
+  "**/src/parser.c",
+  "**/src/tree_sitter/*",
+  "**/test/corpus/*",
+]
+fix = "ttlint --fix --"

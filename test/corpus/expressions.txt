@@ -1,0 +1,439 @@
+================================================================================
+Operators and application
+================================================================================
+
+x = f a b + g c * - h d
+y = M::f x M::+ 1
+z = (+) 1 2
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (binary_expression
+      (binary_expression
+        (application
+          (identifier)
+          (identifier)
+          (identifier))
+        (operator)
+        (application
+          (identifier)
+          (identifier)))
+      (operator)
+      (prefix_expression
+        (operator)
+        (application
+          (identifier)
+          (identifier)))))
+  (function
+    (identifier)
+    (binary_expression
+      (application
+        (qualified_name)
+        (identifier))
+      (qualified_operator)
+      (number)))
+  (function
+    (identifier)
+    (application
+      (operator_section
+        (operator))
+      (number)
+      (number))))
+
+================================================================================
+Long expressions
+================================================================================
+
+a = if p then 1 else 2
+b = if p then 1 | q then 2 else 3
+c = f x \y -> y + 1
+d = 1 + if p then 1 else 2 + 3
+e = \(x, y) -> x
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (if_expression
+      (identifier)
+      (number)
+      (number)))
+  (function
+    (identifier)
+    (if_expression
+      (identifier)
+      (number)
+      (identifier)
+      (number)
+      (number)))
+  (function
+    (identifier)
+    (application
+      (identifier)
+      (identifier)
+      (lambda
+        (identifier)
+        (binary_expression
+          (identifier)
+          (operator)
+          (number)))))
+  (function
+    (identifier)
+    (binary_expression
+      (number)
+      (operator)
+      (if_expression
+        (identifier)
+        (number)
+        (binary_expression
+          (number)
+          (operator)
+          (number)))))
+  (function
+    (identifier)
+    (lambda
+      (tuple_pattern
+        (identifier)
+        (identifier))
+      (identifier))))
+
+================================================================================
+Case expressions
+================================================================================
+
+f x = case x of
+        Just y -> y
+        Nothing -> 0
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (identifier)
+    (case_expression
+      (identifier)
+      (case_alternative
+        (constructor_pattern
+          (identifier)
+          (identifier))
+        (identifier))
+      (case_alternative
+        (identifier)
+        (number)))))
+
+================================================================================
+Where clauses
+================================================================================
+
+f x = y
+  where
+    y = z + 1 where z = x
+g = (a where a = 1) + [b where b = 2, 3]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (identifier)
+    (where_expression
+      (identifier)
+      (local_declarations
+        (function
+          (identifier)
+          (where_expression
+            (binary_expression
+              (identifier)
+              (operator)
+              (number))
+            (local_declarations
+              (function
+                (identifier)
+                (identifier))))))))
+  (function
+    (identifier)
+    (binary_expression
+      (parenthesized_expression
+        (where_expression
+          (identifier)
+          (local_declarations
+            (function
+              (identifier)
+              (number)))))
+      (operator)
+      (list
+        (where_expression
+          (identifier)
+          (local_declarations
+            (function
+              (identifier)
+              (number))))
+        (number)))))
+
+================================================================================
+Typed expressions
+================================================================================
+
+x = 1 : [8]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (typed_expression
+      (number)
+      (sequence_type
+        (number)))))
+
+================================================================================
+Lists and comprehensions
+================================================================================
+
+a = []
+b = [1, 2, 3]
+c = [x + y | x <- xs, y <- ys | z <- zs]
+d = [(i, j) | (i : [8]) <- [0 ...]]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (list))
+  (function
+    (identifier)
+    (list
+      (number)
+      (number)
+      (number)))
+  (function
+    (identifier)
+    (list_comprehension
+      (binary_expression
+        (identifier)
+        (operator)
+        (identifier))
+      (generators
+        (generator
+          (identifier)
+          (identifier))
+        (generator
+          (identifier)
+          (identifier)))
+      (generators
+        (generator
+          (identifier)
+          (identifier)))))
+  (function
+    (identifier)
+    (list_comprehension
+      (tuple
+        (identifier)
+        (identifier))
+      (generators
+        (generator
+          (parenthesized_pattern
+            (typed_pattern
+              (identifier)
+              (sequence_type
+                (number))))
+          (range
+            (number)))))))
+
+================================================================================
+Enumerations
+================================================================================
+
+a = [1 .. 10]
+b = [1, 3 .. 10]
+c = [0 ..< n]
+d = [0 .. < n by 2]
+e = [10 .. 0 down by 2]
+f = [10 ..> 0 down by 2]
+g = [1 ...]
+h = [1, 3 ...]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (range
+      (number)
+      (number)))
+  (function
+    (identifier)
+    (range
+      (number)
+      (number)
+      (number)))
+  (function
+    (identifier)
+    (range
+      (number)
+      (identifier)))
+  (function
+    (identifier)
+    (range
+      (number)
+      (identifier)
+      (number)))
+  (function
+    (identifier)
+    (range
+      (number)
+      (number)
+      (number)))
+  (function
+    (identifier)
+    (range
+      (number)
+      (number)
+      (number)))
+  (function
+    (identifier)
+    (range
+      (number)))
+  (function
+    (identifier)
+    (range
+      (number)
+      (number))))
+
+================================================================================
+Records, tuples, and selectors
+================================================================================
+
+a = { x = 1, y = 2 }
+b = { a | x = 3, y.z -> f }
+c = ()
+d = (1, 2).0
+e = a.x.y
+f = {}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (record
+      (field_assignment
+        (identifier)
+        (number))
+      (field_assignment
+        (identifier)
+        (number))))
+  (function
+    (identifier)
+    (record_update
+      (identifier)
+      (field_assignment
+        (identifier)
+        (number))
+      (field_assignment
+        (selector_expression
+          (identifier)
+          (selector))
+        (identifier))))
+  (function
+    (identifier)
+    (tuple))
+  (function
+    (identifier)
+    (selector_expression
+      (tuple
+        (number)
+        (number))
+      (selector)))
+  (function
+    (identifier)
+    (selector_expression
+      (selector_expression
+        (identifier)
+        (selector))
+      (selector)))
+  (function
+    (identifier)
+    (record)))
+
+================================================================================
+Type arguments and literals
+================================================================================
+
+a = zero`{[8]}
+b = take`{n = 3, a = Bit}
+c = `n
+d = f`{8, _}
+e = <| x^^3 + x + 1 |>
+f = "string\n"
+g = 'c'
+h = 0x1f_ff + 0b101 + 0o17 + 1.5e-3
+i = M::x
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (application
+      (identifier)
+      (type_argument
+        (sequence_type
+          (number)))))
+  (function
+    (identifier)
+    (application
+      (identifier)
+      (type_argument
+        (type_field_assignment
+          (identifier)
+          (number))
+        (type_field_assignment
+          (identifier)
+          (identifier)))))
+  (function
+    (identifier)
+    (type_argument
+      (identifier)))
+  (function
+    (identifier)
+    (application
+      (identifier)
+      (type_argument
+        (number)
+        (wildcard))))
+  (function
+    (identifier)
+    (polynomial
+      (polynomial_term
+        (number))
+      (polynomial_term)
+      (polynomial_term
+        (number))))
+  (function
+    (identifier)
+    (string))
+  (function
+    (identifier)
+    (character))
+  (function
+    (identifier)
+    (binary_expression
+      (binary_expression
+        (binary_expression
+          (number)
+          (operator)
+          (number))
+        (operator)
+        (number))
+      (operator)
+      (number)))
+  (function
+    (identifier)
+    (qualified_name)))

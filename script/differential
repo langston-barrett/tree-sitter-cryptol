@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# Differential test: check that tree-sitter-cryptol accepts exactly the corpus
+# files that Cryptol's own parser accepts.
+#
+# Usage: script/differential [CORPUS_DIR]
+#
+# Environment:
+#   ORACLE       path to the cryptol-parse-oracle executable (see oracle/);
+#                defaults to building it with cabal
+#   TREE_SITTER  tree-sitter CLI command (default: tree-sitter, or npx)
+#
+# The oracle labels each file `ok`, `syntax` (a lexical or grammatical
+# error), or `semantic` (rejected by a check in the parser's semantic
+# actions, e.g., duplicate declarations).  tree-sitter must reject exactly the
+# `syntax` files, except for those listed in script/differential-exceptions.
+set -euo pipefail
+
+root=$(cd "$(dirname "$0")/.." && pwd)
+corpus=$(cd "${1:-$root/corpus}" && pwd)
+exceptions=$root/script/differential-exceptions
+
+if [[ -z ${TREE_SITTER:-} ]]; then
+  if command -v tree-sitter > /dev/null; then
+    TREE_SITTER=tree-sitter
+  else
+    TREE_SITTER="npx tree-sitter"
+  fi
+fi
+if [[ -z ${ORACLE:-} ]]; then
+  (cd "$root/oracle" && cabal build -v0 exe:cryptol-parse-oracle)
+  ORACLE=$(cd "$root/oracle" && cabal list-bin cryptol-parse-oracle)
+fi
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+"$root/script/list-corpus" "$corpus" > "$work/files"
+echo "Corpus: $(wc -l < "$work/files" | tr -d ' ') files" >&2
+
+# Oracle verdicts: "<label> <file>"
+(cd "$corpus" && xargs "$ORACLE" < "$work/files") |
+  cut -f1 | awk '{ print $1, $2 }' | LC_ALL=C sort -k2 > "$work/oracle"
+if grep -v -E '^(ok|syntax|semantic) ' "$work/oracle" >&2; then
+  echo "error: the oracle failed on the files above" >&2
+  exit 1
+fi
+if [[ $(wc -l < "$work/oracle") -ne $(wc -l < "$work/files") ]]; then
+  echo "error: the oracle did not classify every file" >&2
+  exit 1
+fi
+
+# Files tree-sitter rejects (`--quiet` prints only those).
+sed "s|^\./|$corpus/|" "$work/files" > "$work/abs-files"
+# tree-sitter exits with an error if any file fails to parse.
+{ (cd "$root" && $TREE_SITTER parse --quiet --paths "$work/abs-files") 2> /dev/null || true; } |
+  cut -f1 | sed -E "s|^$corpus/|./|; s/[[:space:]]+\$//" | LC_ALL=C sort -u > "$work/ts-rejected"
+
+# Expected mismatches.
+grep -v -E '^(#|$)' "$exceptions" 2> /dev/null | cut -f1 | LC_ALL=C sort -u > "$work/exceptions" || true
+
+awk -v rejected="$work/ts-rejected" '
+  BEGIN { while ((getline f < rejected) > 0) bad[f] = 1 }
+  {
+    label = $1; file = $2
+    if (label == "syntax" && !(file in bad)) print file "\tCryptol rejects, tree-sitter accepts"
+    if (label != "syntax" && (file in bad)) print file "\tCryptol accepts, tree-sitter rejects"
+  }
+' "$work/oracle" | LC_ALL=C sort > "$work/mismatches"
+
+awk '{ print $1 }' "$work/oracle" | sort | uniq -c | sed 's/^/  oracle: /' >&2
+echo "  tree-sitter rejects: $(wc -l < "$work/ts-rejected" | tr -d ' ')" >&2
+
+status=0
+unexpected=$(cut -f1 "$work/mismatches" | LC_ALL=C comm -23 - "$work/exceptions")
+if [[ -n $unexpected ]]; then
+  echo "Unexpected mismatches:" >&2
+  grep -F -f <(echo "$unexpected") "$work/mismatches" | sed 's/^/  /' >&2
+  status=1
+fi
+stale=$(cut -f1 "$work/mismatches" | LC_ALL=C comm -13 - "$work/exceptions")
+if [[ -n $stale ]]; then
+  echo "Listed in $(basename "$exceptions") but no longer mismatched:" >&2
+  while IFS= read -r file; do echo "  $file"; done <<< "$stale" >&2
+  status=1
+fi
+if [[ $status -eq 0 ]]; then
+  echo "OK: tree-sitter agrees with Cryptol on every file" >&2
+fi
+exit $status

@@ -1,0 +1,181 @@
+================================================================================
+Tabs use 8-column tab stops
+================================================================================
+
+f x = y
+	where
+	  y = x
+	  z = x
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (identifier)
+    (where_expression
+      (identifier)
+      (local_declarations
+        (function
+          (identifier)
+          (identifier))
+        (function
+          (identifier)
+          (identifier))))))
+
+================================================================================
+Comments do not affect layout
+================================================================================
+
+f = g
+  where // a comment
+    g = 1
+// a comment at column 0
+    h = 2
+/* nested /* block */ comment */
+x = 1
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (where_expression
+      (identifier)
+      (comment)
+      (local_declarations
+        (function
+          (identifier)
+          (number))
+        (comment)
+        (function
+          (identifier)
+          (number))
+        (comment))))
+  (function
+    (identifier)
+    (number)))
+
+================================================================================
+Documentation comment at the block's column
+================================================================================
+
+module M where
+
+x = 1
+/** Documentation. */
+ interface constraint (fin n)
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (module
+    (module_name
+      (identifier))
+    (declarations
+      (function
+        (identifier)
+        (number))
+      (comment)
+      (interface_constraint
+        (parenthesized_type
+          (type_application
+            (identifier)
+            (identifier)))))))
+
+================================================================================
+Closing brackets and commas end blocks
+================================================================================
+
+x = [y where y = 1, (z where z = 2)]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (list
+      (where_expression
+        (identifier)
+        (local_declarations
+          (function
+            (identifier)
+            (number))))
+      (parenthesized_expression
+        (where_expression
+          (identifier)
+          (local_declarations
+            (function
+              (identifier)
+              (number))))))))
+
+================================================================================
+Nested blocks ending together
+================================================================================
+
+f = a
+  where
+    a = b
+      where
+        b = 1
+g = 2
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (where_expression
+      (identifier)
+      (local_declarations
+        (function
+          (identifier)
+          (where_expression
+            (identifier)
+            (local_declarations
+              (function
+                (identifier)
+                (number))))))))
+  (function
+    (identifier)
+    (number)))
+
+================================================================================
+Explicit semicolons
+================================================================================
+
+x = 1; y = 2
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (number))
+  (function
+    (identifier)
+    (number)))
+
+================================================================================
+Invalid indentation inside brackets
+:error
+================================================================================
+
+x = 0x1 where y = ( 2
+          )
+
+--------------------------------------------------------------------------------
+
+
+
+================================================================================
+Block ended by indentation
+:error
+================================================================================
+
+f x = x +
+1
+
+--------------------------------------------------------------------------------
+
+

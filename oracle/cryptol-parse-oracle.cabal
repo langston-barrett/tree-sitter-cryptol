@@ -1,0 +1,11 @@
+cabal-version: 2.4
+name:          cryptol-parse-oracle
+version:       0.1.0
+synopsis:      Classify Cryptol files using Cryptol's own parser
+license:       MIT
+
+executable cryptol-parse-oracle
+  main-is:          Main.hs
+  default-language: Haskell2010
+  ghc-options:      -Wall -threaded
+  build-depends:    base, bytestring, text, cryptol

@@ -1,0 +1,59 @@
+# Check that tree-sitter-cryptol accepts exactly the files in the corpus (see
+# script/corpus.tsv) that Cryptol's own parser accepts.  See
+# script/differential.
+name: differential
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  differential:
+    runs-on: ubuntu-24.04
+    # Building Cryptol from scratch takes a while; later runs use the cache.
+    timeout-minutes: 120
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+
+    - uses: haskell-actions/setup@0f8e8c99d88aeb3fbfd523f1ef2c6f762d10d64d # v2.12.1
+      id: setup
+      with:
+        ghc-version: '9.10.3'
+        cabal-version: '3.16.0.0'
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ${{ steps.setup.outputs.cabal-store }}
+          oracle/dist-newstyle
+        key: oracle-${{ runner.os }}-${{ hashFiles('oracle/*.cabal', 'oracle/cabal.project*') }}
+        restore-keys: oracle-${{ runner.os }}-
+    - name: Build the oracle
+      working-directory: oracle
+      run: |
+        cabal update
+        cabal build exe:cryptol-parse-oracle
+        echo "ORACLE=$(cabal list-bin cryptol-parse-oracle)" >> "${GITHUB_ENV}"
+
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: corpus
+        key: corpus-${{ hashFiles('script/corpus.tsv') }}
+    - run: script/fetch-corpus
+
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: 22
+        cache: npm
+    - run: npm ci --ignore-scripts && npm rebuild tree-sitter-cli
+    - run: script/differential

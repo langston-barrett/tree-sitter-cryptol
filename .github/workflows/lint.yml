@@ -1,0 +1,34 @@
+name: lint
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - uses: langston-barrett/gha/.github/actions/install-linters@d0cdf249a9684185d96083c87d078679cd373b28
+    - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+    - name: Install clang-format and clang-tidy
+      # Pinned so that formatting does not depend on the runner image.
+      run: |
+        uv tool install clang-format==19.1.7
+        uv tool install clang-tidy==19.1.0.1
+    - uses: langston-barrett/lun/.github/actions/lun@4ff0bb8913126e9f4660c6fb2a10e868e709c9b7
+      with:
+        flags: "--color=always"
+        run-flags: "--check"

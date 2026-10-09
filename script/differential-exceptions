@@ -1,0 +1,2 @@
+# Corpus files on which tree-sitter-cryptol knowingly disagrees with Cryptol's
+# parser.  Format: <path relative to corpus/><TAB><reason>

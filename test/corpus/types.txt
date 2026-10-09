@@ -1,0 +1,131 @@
+================================================================================
+Schemas and kinds
+================================================================================
+
+f : {a, n : #, p : Prop, t : * -> *} (fin n, n >= 1) => (Eq a) => a -> [n]a -> Bit
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (signature_declaration
+    (identifier)
+    (schema
+      (type_parameters
+        (type_parameter_declaration
+          (identifier))
+        (type_parameter_declaration
+          (identifier)
+          (kind))
+        (type_parameter_declaration
+          (identifier)
+          (kind))
+        (type_parameter_declaration
+          (identifier)
+          (function_kind
+            (kind)
+            (kind))))
+      (tuple_type
+        (type_application
+          (identifier)
+          (identifier))
+        (infix_type
+          (identifier)
+          (operator)
+          (number)))
+      (parenthesized_type
+        (type_application
+          (identifier)
+          (identifier)))
+      (function_type
+        (identifier)
+        (function_type
+          (sequence_type
+            (identifier)
+            (identifier))
+          (identifier))))))
+
+================================================================================
+Type forms
+================================================================================
+
+a : [8][4]Bit
+b : ([8], Bit, ())
+c : {x : [8], y : Integer}
+d : Z (2 ^^ 8 - 1)
+e : [n * 2 + 1]
+f : (a -> a) -> a
+g : (Integer : *)
+h : _
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (signature_declaration
+    (identifier)
+    (schema
+      (sequence_type
+        (number)
+        (number)
+        (identifier))))
+  (signature_declaration
+    (identifier)
+    (schema
+      (tuple_type
+        (sequence_type
+          (number))
+        (identifier)
+        (tuple_type))))
+  (signature_declaration
+    (identifier)
+    (schema
+      (record_type
+        (field_type
+          (identifier)
+          (sequence_type
+            (number)))
+        (field_type
+          (identifier)
+          (identifier)))))
+  (signature_declaration
+    (identifier)
+    (schema
+      (type_application
+        (identifier)
+        (parenthesized_type
+          (infix_type
+            (infix_type
+              (number)
+              (operator)
+              (number))
+            (operator)
+            (number))))))
+  (signature_declaration
+    (identifier)
+    (schema
+      (sequence_type
+        (infix_type
+          (infix_type
+            (identifier)
+            (operator)
+            (number))
+          (operator)
+          (number)))))
+  (signature_declaration
+    (identifier)
+    (schema
+      (function_type
+        (parenthesized_type
+          (function_type
+            (identifier)
+            (identifier)))
+        (identifier))))
+  (signature_declaration
+    (identifier)
+    (schema
+      (parenthesized_type
+        (identifier)
+        (kind))))
+  (signature_declaration
+    (identifier)
+    (schema
+      (wildcard))))

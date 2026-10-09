@@ -1,0 +1,313 @@
+================================================================================
+Module header
+================================================================================
+
+module Foo::Bar where
+
+x = 1
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (module
+    (module_name
+      (qualified_name))
+    (declarations
+      (function
+        (identifier)
+        (number)))))
+
+================================================================================
+Implicit module
+================================================================================
+
+x = 1
+y = 2
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (number))
+  (function
+    (identifier)
+    (number)))
+
+================================================================================
+Empty file
+================================================================================
+
+--------------------------------------------------------------------------------
+
+(source_file)
+
+================================================================================
+Imports
+================================================================================
+
+module M where
+
+import A
+import B as C
+import D (x, (+))
+import E hiding (y)
+import submodule F
+import G { H }
+import I { x = J, y = interface K, z = _ }
+import interface L as M
+import `N
+import submodule `O
+import P where
+  type n = 3
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (module
+    (module_name
+      (identifier))
+    (declarations
+      (import
+        (module_name
+          (identifier)))
+      (import
+        (module_name
+          (identifier))
+        (module_name
+          (identifier)))
+      (import
+        (module_name
+          (identifier))
+        (import_list
+          (identifier)
+          (parenthesized_operator
+            (operator))))
+      (import
+        (module_name
+          (identifier))
+        (import_list
+          (identifier)))
+      (import
+        (submodule_name
+          (identifier)))
+      (import
+        (module_name
+          (identifier))
+        (module_arguments
+          (module_name
+            (identifier))))
+      (import
+        (module_name
+          (identifier))
+        (module_arguments
+          (named_module_argument
+            (identifier)
+            (module_name
+              (identifier)))
+          (named_module_argument
+            (identifier)
+            (interface_argument
+              (identifier)))
+          (named_module_argument
+            (identifier)
+            (wildcard))))
+      (import
+        (module_name
+          (identifier))
+        (module_name
+          (identifier)))
+      (import
+        (module_name
+          (identifier)))
+      (import
+        (submodule_name
+          (identifier)))
+      (import
+        (module_name
+          (identifier))
+        (local_declarations
+          (type_synonym
+            (identifier)
+            (number)))))))
+
+================================================================================
+Submodules and functors
+================================================================================
+
+module M where
+
+submodule A where
+  x = 1
+
+submodule B = F { A }
+
+submodule C = F where
+  type n = 3
+
+interface submodule I where
+  type n : #
+  x : [n]
+
+interface constraint (fin n)
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (module
+    (module_name
+      (identifier))
+    (declarations
+      (submodule
+        (module_name
+          (identifier))
+        (declarations
+          (function
+            (identifier)
+            (number))))
+      (submodule
+        (module_name
+          (identifier))
+        (module_name
+          (identifier))
+        (module_arguments
+          (module_name
+            (identifier))))
+      (submodule
+        (module_name
+          (identifier))
+        (module_name
+          (identifier))
+        (declarations
+          (type_synonym
+            (identifier)
+            (number))))
+      (interface_submodule
+        (identifier)
+        (signature
+          (type_parameter
+            (identifier)
+            (kind))
+          (signature_declaration
+            (identifier)
+            (schema
+              (sequence_type
+                (identifier))))))
+      (interface_constraint
+        (parenthesized_type
+          (type_application
+            (identifier)
+            (identifier)))))))
+
+================================================================================
+Interface module
+================================================================================
+
+interface module I where
+  import A
+  type n : #
+  type constraint (fin n, n >= 1)
+  type T = [n]
+  x, y : [n]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (interface_module
+    (module_name
+      (identifier))
+    (signature
+      (import
+        (module_name
+          (identifier)))
+      (type_parameter
+        (identifier)
+        (kind))
+      (parameter_constraint
+        (tuple_type
+          (type_application
+            (identifier)
+            (identifier))
+          (infix_type
+            (identifier)
+            (operator)
+            (number))))
+      (type_synonym
+        (identifier)
+        (sequence_type
+          (identifier)))
+      (signature_declaration
+        (identifier)
+        (identifier)
+        (schema
+          (sequence_type
+            (identifier)))))))
+
+================================================================================
+Module instantiation
+================================================================================
+
+module M = F { G }
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (module
+    (module_name
+      (identifier))
+    (module_name
+      (identifier))
+    (module_arguments
+      (module_name
+        (identifier)))))
+
+================================================================================
+Parameters and private blocks
+================================================================================
+
+module M where
+
+parameter
+  type n : #
+  type constraint (fin n)
+  key : [n]
+
+private
+  helper x = x
+
+private
+
+y = helper key
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (module
+    (module_name
+      (identifier))
+    (declarations
+      (parameter
+        (type_parameter
+          (identifier)
+          (kind))
+        (parameter_constraint
+          (parenthesized_type
+            (type_application
+              (identifier)
+              (identifier))))
+        (signature_declaration
+          (identifier)
+          (schema
+            (sequence_type
+              (identifier)))))
+      (private
+        (function
+          (identifier)
+          (identifier)
+          (identifier)))
+      (private
+        (function
+          (identifier)
+          (application
+            (identifier)
+            (identifier)))))))

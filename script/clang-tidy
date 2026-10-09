@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Run clang-tidy on the given files, using the flags in compile_flags.txt.
+#
+# On macOS, point clang at the SDK if needed, so that toolchains that do not
+# know where it is (e.g., from Nix) can find the system headers.
+set -euo pipefail
+if [[ $(uname) == Darwin && -z ${SDKROOT:-} ]]; then
+  SDKROOT=$(xcrun --show-sdk-path)
+  export SDKROOT
+fi
+exec "${CLANG_TIDY:-clang-tidy}" --quiet "$@"

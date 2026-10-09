@@ -1,0 +1,347 @@
+================================================================================
+Signatures and functions
+================================================================================
+
+f, g : {n, a : *} (fin n, Zero a) => [n]a -> a
+f xs = xs @ 0
+(<+>) : [8] -> [8] -> [8]
+x <+> y = x + y
+(<->) = (-)
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (signature_declaration
+    (identifier)
+    (identifier)
+    (schema
+      (type_parameters
+        (type_parameter_declaration
+          (identifier))
+        (type_parameter_declaration
+          (identifier)
+          (kind)))
+      (tuple_type
+        (type_application
+          (identifier)
+          (identifier))
+        (type_application
+          (identifier)
+          (identifier)))
+      (function_type
+        (sequence_type
+          (identifier)
+          (identifier))
+        (identifier))))
+  (function
+    (identifier)
+    (identifier)
+    (binary_expression
+      (identifier)
+      (operator)
+      (number)))
+  (signature_declaration
+    (parenthesized_operator
+      (operator))
+    (schema
+      (function_type
+        (sequence_type
+          (number))
+        (function_type
+          (sequence_type
+            (number))
+          (sequence_type
+            (number))))))
+  (infix_function
+    (identifier)
+    (operator)
+    (identifier)
+    (binary_expression
+      (identifier)
+      (operator)
+      (identifier)))
+  (function
+    (parenthesized_operator
+      (operator))
+    (operator_section
+      (operator))))
+
+================================================================================
+Patterns in bindings
+================================================================================
+
+(a, b) = (1, 2)
+c # d = 0x12
+f (x, y) [p, q] {r = s} _ = x
+xs @ i = i
+g x @ i @ j = x
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (pattern_binding
+    (tuple_pattern
+      (identifier)
+      (identifier))
+    (tuple
+      (number)
+      (number)))
+  (pattern_binding
+    (split_pattern
+      (identifier)
+      (identifier))
+    (number))
+  (function
+    (identifier)
+    (tuple_pattern
+      (identifier)
+      (identifier))
+    (list_pattern
+      (identifier)
+      (identifier))
+    (record_pattern
+      (field_pattern
+        (identifier)
+        (identifier)))
+    (wildcard)
+    (identifier))
+  (function
+    (identifier)
+    (identifier)
+    (identifier))
+  (function
+    (identifier)
+    (identifier)
+    (identifier)
+    (identifier)
+    (identifier)))
+
+================================================================================
+Constraint guards
+================================================================================
+
+len : {n} (fin n) => [n] -> Integer
+len x
+  | n == 0 => 0
+  | n >= 1 => 1
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (signature_declaration
+    (identifier)
+    (schema
+      (type_parameters
+        (type_parameter_declaration
+          (identifier)))
+      (parenthesized_type
+        (type_application
+          (identifier)
+          (identifier)))
+      (function_type
+        (sequence_type
+          (identifier))
+        (identifier))))
+  (function
+    (identifier)
+    (identifier)
+    (guard
+      (infix_type
+        (identifier)
+        (operator)
+        (number))
+      (number))
+    (guard
+      (infix_type
+        (identifier)
+        (operator)
+        (number))
+      (number))))
+
+================================================================================
+Type and constraint synonyms
+================================================================================
+
+type Word = [32]
+type Vec n a = [n]a
+type constraint Small n = (fin n, n < 8)
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_synonym
+    (identifier)
+    (sequence_type
+      (number)))
+  (type_synonym
+    (type_application
+      (identifier)
+      (identifier)
+      (identifier))
+    (sequence_type
+      (identifier)
+      (identifier)))
+  (constraint_synonym
+    (type_application
+      (identifier)
+      (identifier))
+    (tuple_type
+      (type_application
+        (identifier)
+        (identifier))
+      (infix_type
+        (identifier)
+        (operator)
+        (number)))))
+
+================================================================================
+Fixity
+================================================================================
+
+infixl 6 <+>, <->
+infixr 5 ++
+infix 4 ===
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (fixity
+    (number)
+    (operator)
+    (operator))
+  (fixity
+    (number)
+    (operator))
+  (fixity
+    (number)
+    (operator)))
+
+================================================================================
+Newtypes and enums
+================================================================================
+
+newtype Point = { x : Integer, y : Integer }
+enum Maybe a = Nothing | Just a deriving (Eq, Cmp)
+enum Color
+  = Red
+  | Green
+  | Blue
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (newtype
+    (identifier)
+    (record_type
+      (field_type
+        (identifier)
+        (identifier))
+      (field_type
+        (identifier)
+        (identifier))))
+  (enum
+    (type_application
+      (identifier)
+      (identifier))
+    (constructor
+      (identifier))
+    (constructor
+      (type_application
+        (identifier)
+        (identifier)))
+    (deriving
+      (identifier)
+      (identifier)))
+  (enum
+    (identifier)
+    (constructor
+      (identifier))
+    (constructor
+      (identifier))
+    (constructor
+      (identifier))))
+
+================================================================================
+Primitives, foreign, properties, includes
+================================================================================
+
+primitive (+) : {a} (Ring a) => a -> a -> a
+primitive type (==) : # -> # -> Prop
+primitive type {n : #} (fin n) => Bits n : *
+foreign f : [32] -> [32]
+foreign abstract g : [32] -> [32]
+property p x = x == x
+property q = True
+include "Other.cry"
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (primitive
+    (parenthesized_operator
+      (operator))
+    (schema
+      (type_parameters
+        (type_parameter_declaration
+          (identifier)))
+      (parenthesized_type
+        (type_application
+          (identifier)
+          (identifier)))
+      (function_type
+        (identifier)
+        (function_type
+          (identifier)
+          (identifier)))))
+  (primitive_type
+    (schema
+      (parenthesized_operator_type
+        (operator)))
+    (function_kind
+      (kind)
+      (function_kind
+        (kind)
+        (kind))))
+  (primitive_type
+    (schema
+      (type_parameters
+        (type_parameter_declaration
+          (identifier)
+          (kind)))
+      (parenthesized_type
+        (type_application
+          (identifier)
+          (identifier)))
+      (type_application
+        (identifier)
+        (identifier)))
+    (kind))
+  (foreign
+    (identifier)
+    (schema
+      (function_type
+        (sequence_type
+          (number))
+        (sequence_type
+          (number)))))
+  (foreign
+    (identifier)
+    (identifier)
+    (schema
+      (function_type
+        (sequence_type
+          (number))
+        (sequence_type
+          (number)))))
+  (property
+    (identifier)
+    (identifier)
+    (binary_expression
+      (identifier)
+      (operator)
+      (identifier)))
+  (property
+    (identifier)
+    (identifier))
+  (include
+    (string)))
